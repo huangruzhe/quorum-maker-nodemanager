@@ -49,7 +49,7 @@ func TestRegisterNode(t *testing.T) {
 
 	ec := client.EthClient{"http://10.50.0.2:22000"}
 
-	nmc := NetworkMapContractClient{ec, cp}
+	nmc := NetworkMapContractClient{ec, cp, nil}
 
 	txRec := nmc.RegisterNode(
 		"RBC1",
@@ -71,7 +71,7 @@ func TestUpdateNode(t *testing.T) {
 
 	ec := client.EthClient{"http://10.50.0.2:22000"}
 
-	nmc := NetworkMapContractClient{ec, cp}
+	nmc := NetworkMapContractClient{ec, cp, nil}
 
 	txRec := nmc.UpdateNode(
 		"RBC1",
@@ -94,7 +94,7 @@ func TestGetNodeDetails(t *testing.T) {
 
 	ec := client.EthClient{"http://10.50.0.2:22000"}
 
-	nmc := NetworkMapContractClient{ec, cp}
+	nmc := NetworkMapContractClient{ec, cp,nil}
 
 	nd := nmc.GetNodeDetails(1)
 
@@ -108,7 +108,7 @@ func TestGetNodeDetailsList(t *testing.T) {
 
 	ec := client.EthClient{"http://10.50.0.2:22000"}
 
-	nmc := NetworkMapContractClient{ec, cp}
+	nmc := NetworkMapContractClient{ec, cp, nil}
 
 	for _, nd := range nmc.GetNodeDetailsList() {
 		fmt.Println(nd.Name)
