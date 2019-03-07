@@ -90,7 +90,7 @@ func (nsi *NodeServiceImpl) GetWhitelistedIPsHandler(w http.ResponseWriter, r *h
 	var ipList IPList
 	var connectedIPList []connectedIP
 	var whiteListedIPs []string
-	activeIPs := nsi.getNodeIPs(nsi.Url)
+	activeIPs := nsi.getNodeIPs(nsi.Url, nsi.ProgramPath)
 	for _, ip := range activeIPs {
 		var connected connectedIP
 		connected.IP = ip.IP
@@ -119,7 +119,7 @@ func (nsi *NodeServiceImpl) JoinNetworkHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	if peerMap[enode] == "YES" {
-		response := nsi.joinNetwork(enode, nsi.Url)
+		response := nsi.joinNetwork(enode, nsi.Url, nsi.ProgramPath)
 		json.NewEncoder(w).Encode(response)
 	} else if peerMap[enode] == "NO" {
 		w.WriteHeader(http.StatusForbidden)
@@ -225,7 +225,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 		//fmt.Println(resCLI)
 		case uiResp := <-cUIresp:
 			if uiResp == "YES" {
-				response := nsi.getGenesis(nsi.Url)
+				response := nsi.getGenesis(nsi.Url, nsi.ProgramPath)
 				json.NewEncoder(w).Encode(response)
 			} else if uiResp == "NO" {
 				w.WriteHeader(http.StatusForbidden)
@@ -259,7 +259,7 @@ func (nsi *NodeServiceImpl) JoinRequestResponseHandler(w http.ResponseWriter, r 
 }
 
 func (nsi *NodeServiceImpl) GetCurrentNodeHandler(w http.ResponseWriter, r *http.Request) {
-	response := nsi.getCurrentNode(nsi.Url)
+	response := nsi.getCurrentNode(nsi.Url, nsi.ProgramPath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }
@@ -399,7 +399,7 @@ func (nsi *NodeServiceImpl) DeployContractHandler(w http.ResponseWriter, r *http
 		Buf.Reset()
 	}
 
-	response := nsi.deployContract(publicKeys, fileNames, private, nsi.Url)
+	response := nsi.deployContract(publicKeys, fileNames, private, nsi.Url, nsi.ProgramPath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }
@@ -433,7 +433,7 @@ func (nsi *NodeServiceImpl) ResetHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (nsi *NodeServiceImpl) RestartHandler(w http.ResponseWriter, r *http.Request) {
-	response := nsi.restartCurrentNode()
+	response := nsi.restartCurrentNode(nsi.ProgramPath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }
@@ -445,7 +445,7 @@ func (nsi *NodeServiceImpl) LatestBlockHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (nsi *NodeServiceImpl) LatencyHandler(w http.ResponseWriter, r *http.Request) {
-	response := nsi.latency(nsi.Url)
+	response := nsi.latency(nsi.Url, nsi.ProgramPath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }
@@ -466,7 +466,7 @@ func (nsi *NodeServiceImpl) TransactionSearchHandler(w http.ResponseWriter, r *h
 func (nsi *NodeServiceImpl) MailServerConfigHandler(w http.ResponseWriter, r *http.Request) {
 	var request MailServerConfig
 	_ = json.NewDecoder(r.Body).Decode(&request)
-	response := nsi.emailServerConfig(request.Host, request.Port, request.Username, request.Password, request.RecipientList, nsi.Url)
+	response := nsi.emailServerConfig(request.Host, request.Port, request.Username, request.Password, request.RecipientList, nsi.Url, nsi.ProgramPath)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
@@ -609,7 +609,7 @@ func (nsi *NodeServiceImpl) AttachedNodeDetailsHandler(w http.ResponseWriter, r 
 }
 
 func (nsi *NodeServiceImpl) InitializationHandler(w http.ResponseWriter, r *http.Request) {
-	response := nsi.returnCurrentInitializationState()
+	response := nsi.returnCurrentInitializationState(nsi.ProgramPath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }

@@ -277,16 +277,16 @@ var warning = 0
 var lastCrawledBlock = 0
 var mailServerConfig MailServerConfig
 
-func (nsi *NodeServiceImpl) getGenesis(url string) (response GetGenesisResponse) {
+func (nsi *NodeServiceImpl) getGenesis(url string, programPath string) (response GetGenesisResponse) {
 	var netId, constl string
-	existsA := util.PropertyExists("NETWORK_ID", "/home/setup.conf")
-	existsB := util.PropertyExists("CONSTELLATION_PORT", "/home/setup.conf")
+	existsA := util.PropertyExists("NETWORK_ID", programPath + "setup.conf")
+	existsB := util.PropertyExists("CONSTELLATION_PORT", programPath + "setup.conf")
 	if existsA != "" && existsB != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		netId = util.MustGetString("NETWORK_ID", p)
 		constl = util.MustGetString("CONSTELLATION_PORT", p)
 	}
-	b, err := ioutil.ReadFile("/home/node/genesis.json")
+	b, err := ioutil.ReadFile(programPath + "node/genesis.json")
 	if err != nil {
 		//log.Println(err)
 	}
@@ -297,14 +297,14 @@ func (nsi *NodeServiceImpl) getGenesis(url string) (response GetGenesisResponse)
 	return response
 }
 
-func (nsi *NodeServiceImpl) joinNetwork(enode string, url string) string {
+func (nsi *NodeServiceImpl) joinNetwork(enode string, url string, programPath string) string {
 	var nodeUrl = url
 	ethClient := client.EthClient{nodeUrl}
 	raftId := ethClient.RaftAddPeer(enode)
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", "/home/setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", programPath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 	collatedInfo := fmt.Sprint(raftId, ":", contractAdd)
@@ -312,15 +312,15 @@ func (nsi *NodeServiceImpl) joinNetwork(enode string, url string) string {
 }
 
 //@TODO: If this function is repeatedly called from UI, please cache the static informations.
-func (nsi *NodeServiceImpl) getCurrentNode(url string) NodeInfo {
+func (nsi *NodeServiceImpl) getCurrentNode(url string, programPath string) NodeInfo {
 	var nodeUrl = url
 	ethClient := client.EthClient{nodeUrl}
 	fromAddress := ethClient.Coinbase()
 	var contractAdd string
 	var p *properties.Properties
-	exists := util.PropertyExists("CONTRACT_ADD", "/home/setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", programPath + "setup.conf")
 	if exists != "" {
-		p = properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p = properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
@@ -342,7 +342,7 @@ func (nsi *NodeServiceImpl) getCurrentNode(url string) NodeInfo {
 	r, _ := regexp.Compile("[s][t][a][r][t][_][A-Za-z0-9]*[.][s][h]")
 
 	//@TODO: Use of absolute path (starting with "/") is highly error prone
-	files, err := ioutil.ReadDir("/home/node")
+	files, err := ioutil.ReadDir(programPath + "node")
 	if err != nil {
 		log.Println(err)
 	}
@@ -359,10 +359,10 @@ func (nsi *NodeServiceImpl) getCurrentNode(url string) NodeInfo {
 	nodename = strings.TrimPrefix(nodename, "start_")
 
 	var ipAddr, raftId, rpcPort, nodeName string
-	existsA := util.PropertyExists("CURRENT_IP", "/home/setup.conf")
-	existsB := util.PropertyExists("RAFT_ID", "/home/setup.conf")
-	existsC := util.PropertyExists("RPC_PORT", "/home/setup.conf")
-	existsD := util.PropertyExists("NODENAME", "/home/setup.conf")
+	existsA := util.PropertyExists("CURRENT_IP", programPath + "setup.conf")
+	existsB := util.PropertyExists("RAFT_ID", programPath + "setup.conf")
+	existsC := util.PropertyExists("RPC_PORT", programPath + "setup.conf")
+	existsD := util.PropertyExists("NODENAME", programPath + "setup.conf")
 	if existsA != "" && existsB != "" && existsC != "" && existsD != "" {
 		ipAddr = util.MustGetString("CURRENT_IP", p)
 		raftId = util.MustGetString("RAFT_ID", p)
@@ -392,7 +392,7 @@ func (nsi *NodeServiceImpl) getCurrentNode(url string) NodeInfo {
 
 	raftRole = strings.TrimSuffix(raftRole, "\n")
 
-	b, err := ioutil.ReadFile("/home/node/genesis.json")
+	b, err := ioutil.ReadFile(programPath + "node/genesis.json")
 
 	if err != nil {
 		//log.Println(err)
@@ -747,16 +747,16 @@ func (nsi *NodeServiceImpl) joinRequestResponse(enode string, status string) Suc
 	return successResponse
 }
 
-func (nsi *NodeServiceImpl) deployContract(pubKeys []string, fileName []string, private bool, url string) []ContractJson {
+func (nsi *NodeServiceImpl) deployContract(pubKeys []string, fileName []string, private bool, url string, programPath string) []ContractJson {
 	var nodeUrl = url
 	ethClient := client.EthClient{nodeUrl}
 	fromAddress := ethClient.Coinbase()
 
 	//@TODO: Dont use absolute paths
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", "/home/setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", programPath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}}
@@ -989,10 +989,10 @@ func (nsi *NodeServiceImpl) resetCurrentNode() SuccessResponse {
 	return successResponse
 }
 
-func (nsi *NodeServiceImpl) restartCurrentNode() SuccessResponse {
+func (nsi *NodeServiceImpl) restartCurrentNode(programPath string) SuccessResponse {
 	var successResponse SuccessResponse
 	r, _ := regexp.Compile("[s][t][a][r][t][_][A-Za-z0-9]*[.][s][h]")
-	files, err := ioutil.ReadDir("/home/node")
+	files, err := ioutil.ReadDir(programPath + "node")
 	if err != nil {
 		log.Println(err)
 	}
@@ -1005,7 +1005,7 @@ func (nsi *NodeServiceImpl) restartCurrentNode() SuccessResponse {
 	}
 	filepath := fmt.Sprint("./", filename)
 	cmd := exec.Command(filepath)
-	cmd.Dir = "/home/node"
+	cmd.Dir = programPath + "node"
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err = cmd.Start()
@@ -1070,14 +1070,14 @@ func (nsi *NodeServiceImpl) latestBlockDetails(url string) LatestBlockResponse {
 //	return latencyResponse
 //}
 
-func (nsi *NodeServiceImpl) latency(url string) []LatencyResponse {
+func (nsi *NodeServiceImpl) latency(url string, programPath string) []LatencyResponse {
 	var nodeUrl = url
 	ethClient := client.EthClient{nodeUrl}
 	fromAddress := ethClient.Coinbase()
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", "/home/setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", programPath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
@@ -1115,7 +1115,7 @@ func (nsi *NodeServiceImpl) transactionSearchDetails(txno string, url string) Bl
 	return blockDetailsResponse
 }
 
-func (nsi *NodeServiceImpl) emailServerConfig(host string, port string, username string, password string, recipientList string, url string) SuccessResponse {
+func (nsi *NodeServiceImpl) emailServerConfig(host string, port string, username string, password string, recipientList string, url string, programPath string) SuccessResponse {
 	var successResponse SuccessResponse
 
 	mailServerConfig.Host = host
@@ -1125,7 +1125,7 @@ func (nsi *NodeServiceImpl) emailServerConfig(host string, port string, username
 	mailServerConfig.RecipientList = recipientList
 
 	registered := fmt.Sprint("RECIPIENTLIST=", recipientList, "\n")
-	util.AppendStringToFile("/home/setup.conf", registered)
+	util.AppendStringToFile(programPath + "setup.conf", registered)
 
 	ticker := time.NewTicker(30 * time.Second)
 	go func() {
@@ -1135,25 +1135,25 @@ func (nsi *NodeServiceImpl) emailServerConfig(host string, port string, username
 				//fmt.Println("Ticker stopped")
 				ticker.Stop()
 			}
-			nsi.healthCheck(url)
+			nsi.healthCheck(url, programPath)
 
 		}
 	}()
 	go func() {
-		nsi.sendTestMail()
+		nsi.sendTestMail(programPath)
 	}()
 	successResponse.Status = "success"
 	return successResponse
 }
 
-func (nsi *NodeServiceImpl) healthCheck(url string) {
+func (nsi *NodeServiceImpl) healthCheck(url string, programPath string ) {
 	ethClient := client.EthClient{url}
 	blockNumber := ethClient.BlockNumber()
 	if blockNumber == "" {
 		if warning > 0 {
-			exists := util.PropertyExists("RECIPIENTLIST", "/home/setup.conf")
+			exists := util.PropertyExists("RECIPIENTLIST", programPath + "setup.conf")
 			if exists != "" {
-				p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+				p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 				recipientList := util.MustGetString("RECIPIENTLIST", p)
 				recipients := strings.Split(recipientList, ",")
 
@@ -1174,12 +1174,12 @@ func (nsi *NodeServiceImpl) healthCheck(url string) {
 	}
 }
 
-func (nsi *NodeServiceImpl) sendTestMail() {
-	existsA := util.PropertyExists("RECIPIENTLIST", "/home/setup.conf")
-	existsB := util.PropertyExists("NODENAME", "/home/setup.conf")
+func (nsi *NodeServiceImpl) sendTestMail(programPath string) {
+	existsA := util.PropertyExists("RECIPIENTLIST", programPath + "setup.conf")
+	existsB := util.PropertyExists("NODENAME", programPath + "setup.conf")
 
 	if existsA != "" && existsB != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		nodename := util.MustGetString("NODENAME", p)
 		recipientList := util.MustGetString("RECIPIENTLIST", p)
 		recipients := strings.Split(recipientList, ",")
@@ -1215,20 +1215,20 @@ func (nsi *NodeServiceImpl) sendMail(host string, port string, username string, 
 }
 
 //@TODO: Implement logrotate command to do this.
-func (nsi *NodeServiceImpl) LogRotaterGeth() {
+func (nsi *NodeServiceImpl) LogRotaterGeth(programPath string) {
 	command := "cat $(ls | grep log | grep -v _) > Geth_$(date| sed -e 's/ /_/g')"
 
 	command1 := "echo -en '' > $(ls | grep log | grep -v _)"
 
 	cmd := exec.Command("bash", "-c", command)
-	cmd.Dir = "/home/node/qdata/gethLogs"
+	cmd.Dir = programPath + "node/qdata/gethLogs"
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	cmd1 := exec.Command("bash", "-c", command1)
-	cmd1.Dir = "/home/node/qdata/gethLogs"
+	cmd1.Dir = programPath + "node/qdata/gethLogs"
 	err1 := cmd1.Run()
 	if err1 != nil {
 		fmt.Println(err)
@@ -1236,21 +1236,21 @@ func (nsi *NodeServiceImpl) LogRotaterGeth() {
 
 }
 
-func (nsi *NodeServiceImpl) LogRotaterConst() {
+func (nsi *NodeServiceImpl) LogRotaterConst(programPath string) {
 
 	command := "cat $(ls | grep log | grep _) > Constellation_$(date| sed -e 's/ /_/g')"
 
 	command1 := "echo -en '' > $(ls | grep log | grep _)"
 
 	cmd := exec.Command("bash", "-c", command)
-	cmd.Dir = "/home/node/qdata/constellationLogs"
+	cmd.Dir = programPath + "node/qdata/constellationLogs"
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	cmd1 := exec.Command("bash", "-c", command1)
-	cmd1.Dir = "/home/node/qdata/constellationLogs"
+	cmd1.Dir = programPath + "node/qdata/constellationLogs"
 	err1 := cmd1.Run()
 	if err1 != nil {
 		fmt.Println(err)
@@ -1259,13 +1259,13 @@ func (nsi *NodeServiceImpl) LogRotaterConst() {
 }
 
 func (nsi *NodeServiceImpl) RegisterNodeDetails(url string, programPath string) {
-	mode := currentMode()
+	mode := currentMode(programPath)
 	if mode == "PASSIVE" || mode == "ACTIVENI" {
 		return
 	}
 	var nodeUrl = url
 	var registeredVal string
-	exists := util.PropertyExists("REGISTERED", "/home/setup.conf")
+	exists := util.PropertyExists("REGISTERED", programPath + "setup.conf")
 	if exists != "" {
 		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		registeredVal = util.MustGetString("REGISTERED", p)
@@ -1457,7 +1457,7 @@ func (nsi *NodeServiceImpl) getContracts(url string, programPath string) {
 					contTypeMap[txGetClient.ContractAddress] = "Public"
 					mode := currentMode()
 					if mode == "ACTIVENI" {
-						nsi.attachModeRegisterDetails(url, txGetClient.ContractAddress)
+						nsi.attachModeRegisterDetails(url, programPath, txGetClient.ContractAddress)
 					}
 				}
 				contSenderMap[txGetClient.ContractAddress] = clientTransactions.From
@@ -1469,7 +1469,7 @@ func (nsi *NodeServiceImpl) getContracts(url string, programPath string) {
 	if mode == "ACTIVENI" {
 		util.DeleteProperty("MODE=ACTIVENI", programPath + "setup.conf")
 		modeActive := fmt.Sprint("MODE=ACTIVE\n")
-		util.AppendStringToFile("/home/setup.conf", modeActive)
+		util.AppendStringToFile(programPath + "setup.conf", modeActive)
 		nsi.NetworkManagerContractDeployer(url, programPath)
 		nsi.RegisterNodeDetails(url, programPath)
 	}
@@ -1477,7 +1477,7 @@ func (nsi *NodeServiceImpl) getContracts(url string, programPath string) {
 	contractCrawlerMutex = 0
 }
 
-func (nsi *NodeServiceImpl) attachModeRegisterDetails(url string, contractAdd string) {
+func (nsi *NodeServiceImpl) attachModeRegisterDetails(url string, programPath string, contractAdd string) {
 	nmcBytecode, err := ioutil.ReadFile("/root/quorum-maker/nmcBytecode")
 	if err != nil {
 		log.Println(err)
@@ -1489,13 +1489,13 @@ func (nsi *NodeServiceImpl) attachModeRegisterDetails(url string, contractAdd st
 	hashIndex := len(bytecode) - 68
 	bytecode = bytecode[:hashIndex]
 	if bytecode == nmcBytecodeString {
-		util.DeleteProperty("MODE=ACTIVENI", "/home/setup.conf")
+		util.DeleteProperty("MODE=ACTIVENI", programPath + "setup.conf")
 		modeActive := fmt.Sprint("MODE=ACTIVE\n")
-		util.AppendStringToFile("/home/setup.conf", modeActive)
+		util.AppendStringToFile(programPath + "setup.conf", modeActive)
 		contAddAppend := fmt.Sprint("CONTRACT_ADD=", contractAdd, "\n")
-		util.AppendStringToFile("/home/setup.conf", contAddAppend)
-		util.DeleteProperty("CONTRACT_ADD=", "/home/setup.conf")
-		nsi.RegisterNodeDetails(url)
+		util.AppendStringToFile(programPath + "setup.conf", contAddAppend)
+		util.DeleteProperty("CONTRACT_ADD=", programPath + "setup.conf")
+		nsi.RegisterNodeDetails(url, programPath)
 	}
 }
 
@@ -1543,30 +1543,30 @@ func (nsi *NodeServiceImpl) updateContractDetails(contractAddress string, contra
 	return successResponse
 }
 
-func (nsi *NodeServiceImpl) returnCurrentInitializationState() SuccessResponseBool {
+func (nsi *NodeServiceImpl) returnCurrentInitializationState(programPath string) SuccessResponseBool {
 	var successResponse SuccessResponseBool
-	state := currentState()
+	state := currentState(programPath)
 	if state == "I" {
 		successResponse.Status = true
 	}
 	return successResponse
 }
 
-func currentMode() string {
+func currentMode(programPath string) string {
 	var mode string
-	exists := util.PropertyExists("MODE", "/home/setup.conf")
+	exists := util.PropertyExists("MODE", programPath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		mode = util.MustGetString("MODE", p)
 	}
 	return mode
 }
 
-func currentState() string {
+func currentState(programPath string) string {
 	var state string
-	exists := util.PropertyExists("STATE", "/home/setup.conf")
+	exists := util.PropertyExists("STATE", programPath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		state = util.MustGetString("STATE", p)
 	}
 	return state
@@ -1747,7 +1747,7 @@ func (nsi *NodeServiceImpl) getAccounts(url string) []ethAccount {
 	return accountList
 }
 
-func (nsi *NodeServiceImpl) getNodeIPs(url string) []connectedIP {
+func (nsi *NodeServiceImpl) getNodeIPs(url string, programPath string) []connectedIP {
 	var nodeUrl = url
 	var ipList []connectedIP
 	var connectedIPs = map[string]int{}
@@ -1755,9 +1755,9 @@ func (nsi *NodeServiceImpl) getNodeIPs(url string) []connectedIP {
 	fromAddress := ethClient.Coinbase()
 	enode := ethClient.AdminNodeInfo().ID
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", "/home/setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", programPath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}}

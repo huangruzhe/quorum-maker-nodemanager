@@ -46,8 +46,8 @@ func main() {
 	go func() {
 		for range ticker.C {
 			log.Debug("Rotating log for Geth and Constellation.")
-			nodeService.LogRotaterGeth()
-			nodeService.LogRotaterConst()
+			nodeService.LogRotaterGeth(programPath)
+			nodeService.LogRotaterConst(programPath)
 		}
 	}()
 
