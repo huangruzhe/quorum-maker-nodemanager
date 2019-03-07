@@ -217,6 +217,7 @@ type LatencyResponse struct {
 
 type NodeServiceImpl struct {
 	Url string
+	ProgramPath string
 }
 
 type ChartInfo struct {
@@ -1299,15 +1300,15 @@ func (nsi *NodeServiceImpl) RegisterNodeDetails(url string) {
 	}
 }
 
-func (nsi *NodeServiceImpl) NetworkManagerContractDeployer(url string) {
+func (nsi *NodeServiceImpl) NetworkManagerContractDeployer(url string,programPath string) {
 	mode := currentMode()
 	if mode == "PASSIVE" || mode == "ACTIVENI" {
 		return
 	}
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", "/home/setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", programPath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 	if contractAdd == "" {
@@ -1316,8 +1317,8 @@ func (nsi *NodeServiceImpl) NetworkManagerContractDeployer(url string) {
 		deployedContract := nsi.deployContract(nil, filename, false, url)
 		contAdd := deployedContract[0].ContractAddress
 		contAddAppend := fmt.Sprint("CONTRACT_ADD=", contAdd, "\n")
-		util.AppendStringToFile("/home/setup.conf", contAddAppend)
-		util.DeleteProperty("CONTRACT_ADD=", "/home/setup.conf")
+		util.AppendStringToFile(programPath + "setup.conf", contAddAppend)
+		util.DeleteProperty("CONTRACT_ADD=", programPath + "setup.conf")
 	}
 }
 

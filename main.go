@@ -16,6 +16,8 @@ import (
 
 var nodeUrl = "http://localhost:22000"
 var listenPort = ":8000"
+//the node directory path
+var programPath = "/home/"
 
 func init() {
 	log.SetFormatter(&log.JSONFormatter{})
@@ -33,8 +35,12 @@ func main() {
 		listenPort = ":" + os.Args[2]
 	}
 
+	if len(os.Args) > 3 {
+		programPath = os.Args[3]
+	}
+
 	router := mux.NewRouter()
-	nodeService := service.NodeServiceImpl{nodeUrl}
+	nodeService := service.NodeServiceImpl{nodeUrl, programPath}
 
 	ticker := time.NewTicker(86400 * time.Second)
 	go func() {
@@ -48,7 +54,7 @@ func main() {
 	go func() {
 		nodeService.CheckGethStatus(nodeUrl)
 		//log.Info("Deploying Network Manager Contract")
-		nodeService.NetworkManagerContractDeployer(nodeUrl)
+		nodeService.NetworkManagerContractDeployer(nodeUrl, programPath)
 		nodeService.RegisterNodeDetails(nodeUrl)
 		nodeService.ContractCrawler(nodeUrl)
 		nodeService.ABICrawler(nodeUrl)
