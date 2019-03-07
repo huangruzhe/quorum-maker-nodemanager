@@ -163,7 +163,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 	}
 	log.Info(fmt.Sprint("Join request received from node: ", nodename, " with IP: ", foreignIP, " and enode: ", enode))
 	if peerMap[enode] == "YES" {
-		response := nsi.getGenesis(nsi.Url)
+		response := nsi.getGenesis(nsi.Url, nsi.ProgramPath)
 		json.NewEncoder(w).Encode(response)
 	} else if peerMap[enode] == "NO" {
 		w.WriteHeader(http.StatusForbidden)

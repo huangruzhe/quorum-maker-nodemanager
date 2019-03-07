@@ -1301,7 +1301,7 @@ func (nsi *NodeServiceImpl) RegisterNodeDetails(url string, programPath string) 
 }
 
 func (nsi *NodeServiceImpl) NetworkManagerContractDeployer(url string,programPath string) {
-	mode := currentMode()
+	mode := currentMode(programPath)
 	if mode == "PASSIVE" || mode == "ACTIVENI" {
 		return
 	}
@@ -1314,7 +1314,7 @@ func (nsi *NodeServiceImpl) NetworkManagerContractDeployer(url string,programPat
 	if contractAdd == "" {
 		log.Info("Deploying Network Manager Contract")
 		filename := []string{"NetworkManagerContract.sol"}
-		deployedContract := nsi.deployContract(nil, filename, false, url)
+		deployedContract := nsi.deployContract(nil, filename, false, url, programPath)
 		contAdd := deployedContract[0].ContractAddress
 		contAddAppend := fmt.Sprint("CONTRACT_ADD=", contAdd, "\n")
 		util.AppendStringToFile(programPath + "setup.conf", contAddAppend)
@@ -1455,7 +1455,7 @@ func (nsi *NodeServiceImpl) getContracts(url string, programPath string) {
 					}
 				} else {
 					contTypeMap[txGetClient.ContractAddress] = "Public"
-					mode := currentMode()
+					mode := currentMode(programPath)
 					if mode == "ACTIVENI" {
 						nsi.attachModeRegisterDetails(url, programPath, txGetClient.ContractAddress)
 					}
@@ -1465,7 +1465,7 @@ func (nsi *NodeServiceImpl) getContracts(url string, programPath string) {
 			}
 		}
 	}
-	mode := currentMode()
+	mode := currentMode(programPath)
 	if mode == "ACTIVENI" {
 		util.DeleteProperty("MODE=ACTIVENI", programPath + "setup.conf")
 		modeActive := fmt.Sprint("MODE=ACTIVE\n")
