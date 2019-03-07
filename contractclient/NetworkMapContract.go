@@ -20,8 +20,8 @@ type NodeDetails struct {
 
 type NetworkMapContractClient struct {
 	client.EthClient
-	ProgramPath string
 	ContractParam contracthandler.ContractParam
+	ProgramPath string
 }
 
 type GetNodeDetailsParam int

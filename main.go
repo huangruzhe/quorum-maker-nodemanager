@@ -61,7 +61,7 @@ func main() {
 		nodeService.IPWhitelister()
 	}()
 
-	networkMapService := contractclient.NetworkMapContractClient{EthClient: client.EthClient{nodeUrl}, programPath}
+	networkMapService := contractclient.NetworkMapContractClient{EthClient: client.EthClient{nodeUrl}, nil, programPath}
 	router.HandleFunc("/txn/{txn_hash}", nodeService.GetTransactionInfoHandler).Methods("GET")
 	router.HandleFunc("/txn", nodeService.GetLatestTransactionInfoHandler).Methods("GET")
 	router.HandleFunc("/block/{block_no}", nodeService.GetBlockInfoHandler).Methods("GET")
