@@ -324,7 +324,7 @@ func (nsi *NodeServiceImpl) getCurrentNode(url string, programPath string) NodeI
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
-	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}}
+	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil},programPath}
 
 	totalCount := len(nms.GetNodeDetailsList())
 	var activeStatus string
@@ -759,7 +759,7 @@ func (nsi *NodeServiceImpl) deployContract(pubKeys []string, fileName []string, 
 		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
-	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}}
+	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}, programPath}
 	if private == true && pubKeys[0] == "" {
 		enode := ethClient.AdminNodeInfo().ID
 		peerNo := len(nms.GetNodeDetailsList())
@@ -1081,7 +1081,7 @@ func (nsi *NodeServiceImpl) latency(url string, programPath string) []LatencyRes
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
-	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}}
+	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}, programPath}
 
 	peerNo := len(nms.GetNodeDetailsList())
 
@@ -1295,7 +1295,7 @@ func (nsi *NodeServiceImpl) RegisterNodeDetails(url string, programPath string) 
 		util.AppendStringToFile(programPath + "setup.conf", registered)
 		util.DeleteProperty("REGISTERED=", programPath + "setup.conf")
 		util.DeleteProperty("ROLE=Unassigned", programPath + "setup.conf")
-		nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}}
+		nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}, programPath}
 		nms.RegisterNode(nodename, role, pubKey, enode, ipAddr, id)
 	}
 }
@@ -1760,7 +1760,7 @@ func (nsi *NodeServiceImpl) getNodeIPs(url string, programPath string) []connect
 		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
-	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}}
+	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}, programPath}
 	nodeList := nms.GetNodeDetailsList()
 	for _, node := range nodeList {
 		if node.Enode != enode {
