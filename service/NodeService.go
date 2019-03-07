@@ -1258,7 +1258,7 @@ func (nsi *NodeServiceImpl) LogRotaterConst() {
 
 }
 
-func (nsi *NodeServiceImpl) RegisterNodeDetails(url string) {
+func (nsi *NodeServiceImpl) RegisterNodeDetails(url string, programPath string) {
 	mode := currentMode()
 	if mode == "PASSIVE" || mode == "ACTIVENI" {
 		return
@@ -1267,7 +1267,7 @@ func (nsi *NodeServiceImpl) RegisterNodeDetails(url string) {
 	var registeredVal string
 	exists := util.PropertyExists("REGISTERED", "/home/setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 		registeredVal = util.MustGetString("REGISTERED", p)
 	}
 	if registeredVal != "TRUE" {
@@ -1276,14 +1276,14 @@ func (nsi *NodeServiceImpl) RegisterNodeDetails(url string) {
 		enode := ethClient.AdminNodeInfo().ID
 		fromAddress := ethClient.Coinbase()
 		var ipAddr, nodename, pubKey, role, id, contractAdd string
-		existsA := util.PropertyExists("CURRENT_IP", "/home/setup.conf")
-		existsB := util.PropertyExists("NODENAME", "/home/setup.conf")
-		existsC := util.PropertyExists("PUBKEY", "/home/setup.conf")
-		existsD := util.PropertyExists("ROLE", "/home/setup.conf")
-		existsE := util.PropertyExists("RAFT_ID", "/home/setup.conf")
-		existsF := util.PropertyExists("CONTRACT_ADD", "/home/setup.conf")
+		existsA := util.PropertyExists("CURRENT_IP", programPath + "setup.conf")
+		existsB := util.PropertyExists("NODENAME", programPath + "setup.conf")
+		existsC := util.PropertyExists("PUBKEY", programPath + "setup.conf")
+		existsD := util.PropertyExists("ROLE", programPath + "setup.conf")
+		existsE := util.PropertyExists("RAFT_ID", programPath + "setup.conf")
+		existsF := util.PropertyExists("CONTRACT_ADD", programPath + "setup.conf")
 		if existsA != "" && existsB != "" && existsC != "" && existsD != "" && existsE != "" && existsF != "" {
-			p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+			p := properties.MustLoadFile(programPath + "setup.conf", properties.UTF8)
 			ipAddr = util.MustGetString("CURRENT_IP", p)
 			nodename = util.MustGetString("NODENAME", p)
 			pubKey = util.MustGetString("PUBKEY", p)
@@ -1292,9 +1292,9 @@ func (nsi *NodeServiceImpl) RegisterNodeDetails(url string) {
 			contractAdd = util.MustGetString("CONTRACT_ADD", p)
 		}
 		registered := fmt.Sprint("REGISTERED=TRUE", "\n")
-		util.AppendStringToFile("/home/setup.conf", registered)
-		util.DeleteProperty("REGISTERED=", "/home/setup.conf")
-		util.DeleteProperty("ROLE=Unassigned", "/home/setup.conf")
+		util.AppendStringToFile(programPath + "setup.conf", registered)
+		util.DeleteProperty("REGISTERED=", programPath + "setup.conf")
+		util.DeleteProperty("ROLE=Unassigned", programPath + "setup.conf")
 		nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}}
 		nms.RegisterNode(nodename, role, pubKey, enode, ipAddr, id)
 	}
@@ -1420,18 +1420,18 @@ func (nsi *NodeServiceImpl) GetChartData(url string) []ChartInfo {
 	return chartResponse
 }
 
-func (nsi *NodeServiceImpl) ContractCrawler(url string) {
+func (nsi *NodeServiceImpl) ContractCrawler(url string, programPath string) {
 	ticker := time.NewTicker(15 * time.Second)
 	go func() {
 		for range ticker.C {
 			if contractCrawlerMutex == 0 {
-				nsi.getContracts(url)
+				nsi.getContracts(url, programPath)
 			}
 		}
 	}()
 }
 
-func (nsi *NodeServiceImpl) getContracts(url string) {
+func (nsi *NodeServiceImpl) getContracts(url string, programPath string) {
 	contractCrawlerMutex = 1
 	ethClient := client.EthClient{url}
 	blockNumber := int(util.HexStringtoInt64(ethClient.BlockNumber()))
@@ -1467,11 +1467,11 @@ func (nsi *NodeServiceImpl) getContracts(url string) {
 	}
 	mode := currentMode()
 	if mode == "ACTIVENI" {
-		util.DeleteProperty("MODE=ACTIVENI", "/home/setup.conf")
+		util.DeleteProperty("MODE=ACTIVENI", programPath + "setup.conf")
 		modeActive := fmt.Sprint("MODE=ACTIVE\n")
 		util.AppendStringToFile("/home/setup.conf", modeActive)
-		nsi.NetworkManagerContractDeployer(url)
-		nsi.RegisterNodeDetails(url)
+		nsi.NetworkManagerContractDeployer(url, programPath)
+		nsi.RegisterNodeDetails(url, programPath)
 	}
 	lastCrawledBlock = blockNumber
 	contractCrawlerMutex = 0

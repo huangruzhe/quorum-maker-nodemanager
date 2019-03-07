@@ -139,7 +139,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 	//recipients := strings.Split(mailServerConfig.RecipientList, ",")
 	if allowedIPs[foreignIP] {
 		peerMap[enode] = "YES"
-		exists := util.PropertyExists("RECIPIENTLIST", "/home/setup.conf")
+		exists := util.PropertyExists("RECIPIENTLIST", nsi.ProgramPath + "setup.conf")
 		if exists != "" {
 			go func() {
 				b, err := ioutil.ReadFile("/root/quorum-maker/JoinRequestTemplate.txt")
@@ -151,7 +151,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 				mailCont := string(b)
 				mailCont = strings.Replace(mailCont, "\n", "", -1)
 
-				p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+				p := properties.MustLoadFile(nsi.ProgramPath + "setup.conf", properties.UTF8)
 				recipientList := util.MustGetString("RECIPIENTLIST", p)
 				recipients := strings.Split(recipientList, ",")
 				for i := 0; i < len(recipients); i++ {
@@ -169,7 +169,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Access denied"))
 	} else {
-		exists := util.PropertyExists("RECIPIENTLIST", "/home/setup.conf")
+		exists := util.PropertyExists("RECIPIENTLIST", nsi.ProgramPath + "setup.conf")
 		if exists != "" {
 			go func() {
 				b, err := ioutil.ReadFile("/root/quorum-maker/JoinRequestTemplate.txt")
@@ -181,7 +181,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 				mailCont := string(b)
 				mailCont = strings.Replace(mailCont, "\n", "", -1)
 
-				p := properties.MustLoadFile("/home/setup.conf", properties.UTF8)
+				p := properties.MustLoadFile(nsi.ProgramPath +" setup.conf", properties.UTF8)
 				recipientList := util.MustGetString("RECIPIENTLIST", p)
 				recipients := strings.Split(recipientList, ",")
 				for i := 0; i < len(recipients); i++ {
@@ -581,7 +581,7 @@ func (nsi *NodeServiceImpl) AttachedNodeDetailsHandler(w http.ResponseWriter, r 
 	io.Copy(&Buf, file)
 	content := Buf.String()
 
-	filePath := "/home/node/genesis.json"
+	filePath := nsi.ProgramPath + "node/genesis.json"
 	jsByte := []byte(content)
 	err = ioutil.WriteFile(filePath, jsByte, 0775)
 	if err != nil {
@@ -591,17 +591,17 @@ func (nsi *NodeServiceImpl) AttachedNodeDetailsHandler(w http.ResponseWriter, r 
 	var jsonContent genesisJSON
 	json.Unmarshal([]byte(content), &jsonContent)
 	chainIdAppend := fmt.Sprint("NETWORK_ID=", jsonContent.Config.ChainId, "\n")
-	util.AppendStringToFile("/home/setup.conf", chainIdAppend)
-	util.InsertStringToFile("/home/start.sh", "	   -v "+gethLogsDirectory+":/home/node/qdata/gethLogs \\\n", 13)
-	util.InsertStringToFile("/home/start.sh", "	   -v "+constellationLogsDirectory+":/home/node/qdata/constellationLogs \\\n", 13)
+	util.AppendStringToFile(nsi.ProgramPath + "setup.conf", chainIdAppend)
+	util.InsertStringToFile(nsi.ProgramPath + "start.sh", "	   -v "+gethLogsDirectory+":"+nsi.ProgramPath+"node/qdata/gethLogs \\\n", 13)
+	util.InsertStringToFile(nsi.ProgramPath + "start.sh", "	   -v "+constellationLogsDirectory+":"+nsi.ProgramPath+"node/qdata/constellationLogs \\\n", 13)
 
 	Buf.Reset()
 	fmt.Println("Updates have been saved. Please press Ctrl+C to exit from this container and run start.sh to apply changes")
 	state := currentState()
 	if state == "NI" {
-		util.DeleteProperty("STATE=NI", "/home/setup.conf")
+		util.DeleteProperty("STATE=NI", nsi.ProgramPath + "setup.conf")
 		stateInitialized := fmt.Sprint("STATE=I\n")
-		util.AppendStringToFile("/home/setup.conf", stateInitialized)
+		util.AppendStringToFile(nsi.ProgramPath + "setup.conf", stateInitialized)
 	}
 	successResponse.Status = "Updates have been saved. Please press Ctrl+C from CLI to exit from this container and run start.sh to apply changes"
 	w.Header().Set("Access-Control-Allow-Origin", "*")
