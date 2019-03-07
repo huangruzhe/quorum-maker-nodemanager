@@ -2,9 +2,9 @@ package contractclient
 
 import (
 	"fmt"
-	"github.com/synechron-finlabs/quorum-maker-nodemanager/client"
-	"github.com/synechron-finlabs/quorum-maker-nodemanager/contracthandler"
-	"github.com/synechron-finlabs/quorum-maker-nodemanager/util"
+	"github.com/huangruzhe/quorum-maker-nodemanager/client"
+	"github.com/huangruzhe/quorum-maker-nodemanager/contracthandler"
+	"github.com/huangruzhe/quorum-maker-nodemanager/util"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"

@@ -2,7 +2,7 @@ package contracthandler_test
 
 import (
 	"testing"
-	"github.com/synechron-finlabs/quorum-maker-nodemanager/contracthandler"
+	"github.com/huangruzhe/quorum-maker-nodemanager/contracthandler"
 )
 
 func TestIsSuported(t *testing.T) {

@@ -2,7 +2,7 @@ package contracthandler
 
 import (
 	"bytes"
-	"github.com/synechron-finlabs/quorum-maker-nodemanager/util"
+	"github.com/huangruzhe/quorum-maker-nodemanager/util"
 	"strings"		
 )
 
