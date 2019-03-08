@@ -1,2 +1,5 @@
 quorum-maker-nodemanager
 .idea/**
+/contracts/.lastCheckedTime
+/contracts/.whiteList
+
