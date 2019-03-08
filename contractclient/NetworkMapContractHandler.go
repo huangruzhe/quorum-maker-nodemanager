@@ -43,9 +43,9 @@ func (nms *NetworkMapContractClient) UpdateNodeRequestsHandler(w http.ResponseWr
 	ip := request.IP
 	id := request.ID
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", nms.ProgramPath + "setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", nms.NodePath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile(nms.ProgramPath + "setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(nms.NodePath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
@@ -72,9 +72,9 @@ func (nms *NetworkMapContractClient) RegisterNodeRequestHandler(w http.ResponseW
 	ip := request.IP
 	id := request.ID
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", nms.ProgramPath + "setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", nms.NodePath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile(nms.ProgramPath + "setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(nms.NodePath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
@@ -98,9 +98,9 @@ func (nms *NetworkMapContractClient) GetNodeDetailsResponseHandler(w http.Respon
 		fmt.Println(err)
 	}
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", nms.ProgramPath + "setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", nms.NodePath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile(nms.ProgramPath + "setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(nms.NodePath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
@@ -118,9 +118,9 @@ func (nms *NetworkMapContractClient) GetNodeDetailsResponseHandler(w http.Respon
 func (nms *NetworkMapContractClient) GetNodeListResponseHandler(w http.ResponseWriter, r *http.Request) {
 	coinbase := nms.EthClient.Coinbase()
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", nms.ProgramPath + "setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", nms.NodePath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile(nms.ProgramPath + "setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(nms.NodePath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
@@ -140,12 +140,12 @@ func (nms *NetworkMapContractClient) GetNodeListSelfResponseHandler(w http.Respo
 	enode := nms.EthClient.AdminNodeInfo().ID
 	//var contractAdd, nodename string
 	var contractAdd string
-	//existsA := util.PropertyExists("CONTRACT_ADD", nms.ProgramPath + "setup.conf")
-	exists := util.PropertyExists("CONTRACT_ADD", nms.ProgramPath + "setup.conf")
-	//existsB := util.PropertyExists("NODENAME", nms.ProgramPath + "setup.conf")
+	//existsA := util.PropertyExists("CONTRACT_ADD", nms.NodePath + "setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", nms.NodePath + "setup.conf")
+	//existsB := util.PropertyExists("NODENAME", nms.NodePath + "setup.conf")
 	//if existsA != "" && existsB != "" {
 	if exists != "" {
-		p := properties.MustLoadFile(nms.ProgramPath + "setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(nms.NodePath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 		//nodename = util.MustGetString("NODENAME", p)
 	}
@@ -189,9 +189,9 @@ func (nms *NetworkMapContractClient) GetNodeListSelfResponseHandler(w http.Respo
 func (nms *NetworkMapContractClient) ActiveNodesHandler(w http.ResponseWriter, r *http.Request) {
 	coinbase := nms.EthClient.Coinbase()
 	var contractAdd string
-	exists := util.PropertyExists("CONTRACT_ADD", nms.ProgramPath + "setup.conf")
+	exists := util.PropertyExists("CONTRACT_ADD", nms.NodePath + "setup.conf")
 	if exists != "" {
-		p := properties.MustLoadFile(nms.ProgramPath + "setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(nms.NodePath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
 
@@ -226,14 +226,14 @@ func (nms *NetworkMapContractClient) UpdateNodeHandler(w http.ResponseWriter, r 
 	enode := nms.EthClient.AdminNodeInfo().ID
 	//var contractAdd, publickey, ip, id, oldName string
 	var contractAdd, publickey, ip, id string
-	existsA := util.PropertyExists("CONTRACT_ADD", nms.ProgramPath + "setup.conf")
-	existsB := util.PropertyExists("PUBKEY", nms.ProgramPath + "setup.conf")
-	existsC := util.PropertyExists("CURRENT_IP", nms.ProgramPath + "setup.conf")
-	existsD := util.PropertyExists("RAFT_ID", nms.ProgramPath + "setup.conf")
-	//existsE := util.PropertyExists("NODENAME", nms.ProgramPath + "setup.conf")
+	existsA := util.PropertyExists("CONTRACT_ADD", nms.NodePath + "setup.conf")
+	existsB := util.PropertyExists("PUBKEY", nms.NodePath + "setup.conf")
+	existsC := util.PropertyExists("CURRENT_IP", nms.NodePath + "setup.conf")
+	existsD := util.PropertyExists("RAFT_ID", nms.NodePath + "setup.conf")
+	//existsE := util.PropertyExists("NODENAME", nms.NodePath + "setup.conf")
 	//if existsA != "" && existsB != "" && existsC != "" && existsD != "" && existsE != "" {
 	if existsA != "" && existsB != "" && existsC != "" && existsD != "" {
-		p := properties.MustLoadFile(nms.ProgramPath + "setup.conf", properties.UTF8)
+		p := properties.MustLoadFile(nms.NodePath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 		publickey = util.MustGetString("PUBKEY", p)
 		ip = util.MustGetString("CURRENT_IP", p)
@@ -244,9 +244,9 @@ func (nms *NetworkMapContractClient) UpdateNodeHandler(w http.ResponseWriter, r 
 	nms.SetContractParam(cp)
 	response := nms.UpdateNode(nodeName, role, publickey, enode, ip, id)
 	//registered := fmt.Sprint("NODENAME=", nodeName, "\n")
-	//util.AppendStringToFile(nms.ProgramPath + "setup.conf", registered)
+	//util.AppendStringToFile(nms.NodePath + "setup.conf", registered)
 	//oldProperty := fmt.Sprint("NODENAME=", oldName)
-	//util.DeleteProperty(oldProperty, nms.ProgramPath + "setup.conf")
+	//util.DeleteProperty(oldProperty, nms.NodePath + "setup.conf")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control")

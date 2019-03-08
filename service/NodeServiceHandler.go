@@ -90,7 +90,7 @@ func (nsi *NodeServiceImpl) GetWhitelistedIPsHandler(w http.ResponseWriter, r *h
 	var ipList IPList
 	var connectedIPList []connectedIP
 	var whiteListedIPs []string
-	activeIPs := nsi.getNodeIPs(nsi.Url, nsi.ProgramPath)
+	activeIPs := nsi.getNodeIPs(nsi.Url, nsi.NodePath)
 	for _, ip := range activeIPs {
 		var connected connectedIP
 		connected.IP = ip.IP
@@ -119,7 +119,7 @@ func (nsi *NodeServiceImpl) JoinNetworkHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	if peerMap[enode] == "YES" {
-		response := nsi.joinNetwork(enode, nsi.Url, nsi.ProgramPath)
+		response := nsi.joinNetwork(enode, nsi.Url, nsi.NodePath)
 		json.NewEncoder(w).Encode(response)
 	} else if peerMap[enode] == "NO" {
 		w.WriteHeader(http.StatusForbidden)
@@ -139,7 +139,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 	//recipients := strings.Split(mailServerConfig.RecipientList, ",")
 	if allowedIPs[foreignIP] {
 		peerMap[enode] = "YES"
-		exists := util.PropertyExists("RECIPIENTLIST", nsi.ProgramPath + "setup.conf")
+		exists := util.PropertyExists("RECIPIENTLIST", nsi.NodePath + "setup.conf")
 		if exists != "" {
 			go func() {
 				b, err := ioutil.ReadFile("/root/quorum-maker/JoinRequestTemplate.txt")
@@ -151,7 +151,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 				mailCont := string(b)
 				mailCont = strings.Replace(mailCont, "\n", "", -1)
 
-				p := properties.MustLoadFile(nsi.ProgramPath + "setup.conf", properties.UTF8)
+				p := properties.MustLoadFile(nsi.NodePath + "setup.conf", properties.UTF8)
 				recipientList := util.MustGetString("RECIPIENTLIST", p)
 				recipients := strings.Split(recipientList, ",")
 				for i := 0; i < len(recipients); i++ {
@@ -163,13 +163,13 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 	}
 	log.Info(fmt.Sprint("Join request received from node: ", nodename, " with IP: ", foreignIP, " and enode: ", enode))
 	if peerMap[enode] == "YES" {
-		response := nsi.getGenesis(nsi.Url, nsi.ProgramPath)
+		response := nsi.getGenesis(nsi.Url, nsi.NodePath)
 		json.NewEncoder(w).Encode(response)
 	} else if peerMap[enode] == "NO" {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Access denied"))
 	} else {
-		exists := util.PropertyExists("RECIPIENTLIST", nsi.ProgramPath + "setup.conf")
+		exists := util.PropertyExists("RECIPIENTLIST", nsi.NodePath + "setup.conf")
 		if exists != "" {
 			go func() {
 				b, err := ioutil.ReadFile("/root/quorum-maker/JoinRequestTemplate.txt")
@@ -181,7 +181,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 				mailCont := string(b)
 				mailCont = strings.Replace(mailCont, "\n", "", -1)
 
-				p := properties.MustLoadFile(nsi.ProgramPath +" setup.conf", properties.UTF8)
+				p := properties.MustLoadFile(nsi.NodePath +" setup.conf", properties.UTF8)
 				recipientList := util.MustGetString("RECIPIENTLIST", p)
 				recipients := strings.Split(recipientList, ",")
 				for i := 0; i < len(recipients); i++ {
@@ -225,7 +225,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 		//fmt.Println(resCLI)
 		case uiResp := <-cUIresp:
 			if uiResp == "YES" {
-				response := nsi.getGenesis(nsi.Url, nsi.ProgramPath)
+				response := nsi.getGenesis(nsi.Url, nsi.NodePath)
 				json.NewEncoder(w).Encode(response)
 			} else if uiResp == "NO" {
 				w.WriteHeader(http.StatusForbidden)
@@ -259,7 +259,7 @@ func (nsi *NodeServiceImpl) JoinRequestResponseHandler(w http.ResponseWriter, r 
 }
 
 func (nsi *NodeServiceImpl) GetCurrentNodeHandler(w http.ResponseWriter, r *http.Request) {
-	response := nsi.getCurrentNode(nsi.Url, nsi.ProgramPath)
+	response := nsi.getCurrentNode(nsi.Url, nsi.NodePath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }
@@ -399,7 +399,7 @@ func (nsi *NodeServiceImpl) DeployContractHandler(w http.ResponseWriter, r *http
 		Buf.Reset()
 	}
 
-	response := nsi.deployContract(publicKeys, fileNames, private, nsi.Url, nsi.ProgramPath)
+	response := nsi.deployContract(publicKeys, fileNames, private, nsi.Url, nsi.NodePath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }
@@ -433,7 +433,7 @@ func (nsi *NodeServiceImpl) ResetHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (nsi *NodeServiceImpl) RestartHandler(w http.ResponseWriter, r *http.Request) {
-	response := nsi.restartCurrentNode(nsi.ProgramPath)
+	response := nsi.restartCurrentNode(nsi.NodePath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }
@@ -445,7 +445,7 @@ func (nsi *NodeServiceImpl) LatestBlockHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (nsi *NodeServiceImpl) LatencyHandler(w http.ResponseWriter, r *http.Request) {
-	response := nsi.latency(nsi.Url, nsi.ProgramPath)
+	response := nsi.latency(nsi.Url, nsi.NodePath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }
@@ -466,7 +466,7 @@ func (nsi *NodeServiceImpl) TransactionSearchHandler(w http.ResponseWriter, r *h
 func (nsi *NodeServiceImpl) MailServerConfigHandler(w http.ResponseWriter, r *http.Request) {
 	var request MailServerConfig
 	_ = json.NewDecoder(r.Body).Decode(&request)
-	response := nsi.emailServerConfig(request.Host, request.Port, request.Username, request.Password, request.RecipientList, nsi.Url, nsi.ProgramPath)
+	response := nsi.emailServerConfig(request.Host, request.Port, request.Username, request.Password, request.RecipientList, nsi.Url, nsi.NodePath)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
@@ -581,7 +581,7 @@ func (nsi *NodeServiceImpl) AttachedNodeDetailsHandler(w http.ResponseWriter, r 
 	io.Copy(&Buf, file)
 	content := Buf.String()
 
-	filePath := nsi.ProgramPath + "node/genesis.json"
+	filePath := nsi.NodePath + "node/genesis.json"
 	jsByte := []byte(content)
 	err = ioutil.WriteFile(filePath, jsByte, 0775)
 	if err != nil {
@@ -591,17 +591,17 @@ func (nsi *NodeServiceImpl) AttachedNodeDetailsHandler(w http.ResponseWriter, r 
 	var jsonContent genesisJSON
 	json.Unmarshal([]byte(content), &jsonContent)
 	chainIdAppend := fmt.Sprint("NETWORK_ID=", jsonContent.Config.ChainId, "\n")
-	util.AppendStringToFile(nsi.ProgramPath + "setup.conf", chainIdAppend)
-	util.InsertStringToFile(nsi.ProgramPath + "start.sh", "	   -v "+gethLogsDirectory+":"+nsi.ProgramPath+"node/qdata/gethLogs \\\n", 13)
-	util.InsertStringToFile(nsi.ProgramPath + "start.sh", "	   -v "+constellationLogsDirectory+":"+nsi.ProgramPath+"node/qdata/constellationLogs \\\n", 13)
+	util.AppendStringToFile(nsi.NodePath + "setup.conf", chainIdAppend)
+	util.InsertStringToFile(nsi.NodePath + "start.sh", "	   -v "+gethLogsDirectory+":"+nsi.NodePath+"node/qdata/gethLogs \\\n", 13)
+	util.InsertStringToFile(nsi.NodePath + "start.sh", "	   -v "+constellationLogsDirectory+":"+nsi.NodePath+"node/qdata/constellationLogs \\\n", 13)
 
 	Buf.Reset()
 	fmt.Println("Updates have been saved. Please press Ctrl+C to exit from this container and run start.sh to apply changes")
-	state := currentState(nsi.ProgramPath)
+	state := currentState(nsi.NodePath)
 	if state == "NI" {
-		util.DeleteProperty("STATE=NI", nsi.ProgramPath + "setup.conf")
+		util.DeleteProperty("STATE=NI", nsi.NodePath + "setup.conf")
 		stateInitialized := fmt.Sprint("STATE=I\n")
-		util.AppendStringToFile(nsi.ProgramPath + "setup.conf", stateInitialized)
+		util.AppendStringToFile(nsi.NodePath + "setup.conf", stateInitialized)
 	}
 	successResponse.Status = "Updates have been saved. Please press Ctrl+C from CLI to exit from this container and run start.sh to apply changes"
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -609,7 +609,7 @@ func (nsi *NodeServiceImpl) AttachedNodeDetailsHandler(w http.ResponseWriter, r 
 }
 
 func (nsi *NodeServiceImpl) InitializationHandler(w http.ResponseWriter, r *http.Request) {
-	response := nsi.returnCurrentInitializationState(nsi.ProgramPath)
+	response := nsi.returnCurrentInitializationState(nsi.NodePath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)
 }

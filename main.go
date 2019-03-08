@@ -17,7 +17,7 @@ import (
 var nodeUrl = "http://localhost:22000"
 var listenPort = ":8000"
 //the node directory path
-var programPath = "/home/"
+var nodePath = "/home/"
 
 func init() {
 	log.SetFormatter(&log.JSONFormatter{})
@@ -36,32 +36,32 @@ func main() {
 	}
 
 	if len(os.Args) > 3 {
-		programPath = os.Args[3]
+		nodePath = os.Args[3]
 	}
 
 	router := mux.NewRouter()
-	nodeService := service.NodeServiceImpl{nodeUrl, programPath}
+	nodeService := service.NodeServiceImpl{nodeUrl, nodePath}
 
 	ticker := time.NewTicker(86400 * time.Second)
 	go func() {
 		for range ticker.C {
 			log.Debug("Rotating log for Geth and Constellation.")
-			nodeService.LogRotaterGeth(programPath)
-			nodeService.LogRotaterConst(programPath)
+			nodeService.LogRotaterGeth(nodePath)
+			nodeService.LogRotaterConst(nodePath)
 		}
 	}()
 
 	go func() {
 		nodeService.CheckGethStatus(nodeUrl)
 		//log.Info("Deploying Network Manager Contract")
-		nodeService.NetworkManagerContractDeployer(nodeUrl, programPath)
-		nodeService.RegisterNodeDetails(nodeUrl, programPath)
-		nodeService.ContractCrawler(nodeUrl, programPath)
+		nodeService.NetworkManagerContractDeployer(nodeUrl, nodePath)
+		nodeService.RegisterNodeDetails(nodeUrl, nodePath)
+		nodeService.ContractCrawler(nodeUrl, nodePath)
 		nodeService.ABICrawler(nodeUrl)
 		nodeService.IPWhitelister()
 	}()
 
-	networkMapService := contractclient.NetworkMapContractClient{EthClient: client.EthClient{nodeUrl},ProgramPath:programPath}
+	networkMapService := contractclient.NetworkMapContractClient{EthClient: client.EthClient{nodeUrl},NodePath:nodePath}
 	router.HandleFunc("/txn/{txn_hash}", nodeService.GetTransactionInfoHandler).Methods("GET")
 	router.HandleFunc("/txn", nodeService.GetLatestTransactionInfoHandler).Methods("GET")
 	router.HandleFunc("/block/{block_no}", nodeService.GetBlockInfoHandler).Methods("GET")
