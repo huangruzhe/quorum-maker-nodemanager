@@ -55,10 +55,10 @@ var channelMap = make(map[string](chan string))
 
 func (nsi *NodeServiceImpl) IPWhitelister() {
 	go func() {
-		if _, err := os.Stat("/root/quorum-maker/contracts/.whiteList"); os.IsNotExist(err) {
-			util.CreateFile("/root/quorum-maker/contracts/.whiteList")
+		if _, err := os.Stat(nsi.ProgramPath + "contracts/.whiteList"); os.IsNotExist(err) {
+			util.CreateFile(nsi.ProgramPath + "contracts/.whiteList")
 		}
-		whitelistedIPs, _ := util.File2lines("/root/quorum-maker/contracts/.whiteList")
+		whitelistedIPs, _ := util.File2lines(nsi.ProgramPath + "contracts/.whiteList")
 		whiteList = append(whiteList, whitelistedIPs...)
 		for _, ip := range whitelistedIPs {
 			allowedIPs[ip] = true
@@ -78,7 +78,7 @@ func (nsi *NodeServiceImpl) UpdateWhitelistHandler(w http.ResponseWriter, r *htt
 		allowedIPs[ip] = true
 	}
 	whiteList = append(whiteList, ipList ...)
-	response := nsi.updateWhitelist(ipList)
+	response := nsi.updateWhitelist(ipList, nsi.ProgramPath)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
@@ -142,7 +142,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 		exists := util.PropertyExists("RECIPIENTLIST", nsi.NodePath + "setup.conf")
 		if exists != "" {
 			go func() {
-				b, err := ioutil.ReadFile("/root/quorum-maker/JoinRequestTemplate.txt")
+				b, err := ioutil.ReadFile(nsi.ProgramPath + "JoinRequestTemplate.txt")
 
 				if err != nil {
 					log.Println(err)
@@ -172,7 +172,7 @@ func (nsi *NodeServiceImpl) GetGenesisHandler(w http.ResponseWriter, r *http.Req
 		exists := util.PropertyExists("RECIPIENTLIST", nsi.NodePath + "setup.conf")
 		if exists != "" {
 			go func() {
-				b, err := ioutil.ReadFile("/root/quorum-maker/JoinRequestTemplate.txt")
+				b, err := ioutil.ReadFile(nsi.ProgramPath + "JoinRequestTemplate.txt")
 
 				if err != nil {
 					log.Println(err)
@@ -466,7 +466,7 @@ func (nsi *NodeServiceImpl) TransactionSearchHandler(w http.ResponseWriter, r *h
 func (nsi *NodeServiceImpl) MailServerConfigHandler(w http.ResponseWriter, r *http.Request) {
 	var request MailServerConfig
 	_ = json.NewDecoder(r.Body).Decode(&request)
-	response := nsi.emailServerConfig(request.Host, request.Port, request.Username, request.Password, request.RecipientList, nsi.Url, nsi.NodePath)
+	response := nsi.emailServerConfig(request.Host, request.Port, request.Username, request.Password, request.RecipientList, nsi.Url, nsi.NodePath, nsi.ProgramPath)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")

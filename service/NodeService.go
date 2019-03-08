@@ -218,6 +218,7 @@ type LatencyResponse struct {
 type NodeServiceImpl struct {
 	Url string
 	NodePath string
+	ProgramPath string
 }
 
 type ChartInfo struct {
@@ -1115,7 +1116,7 @@ func (nsi *NodeServiceImpl) transactionSearchDetails(txno string, url string) Bl
 	return blockDetailsResponse
 }
 
-func (nsi *NodeServiceImpl) emailServerConfig(host string, port string, username string, password string, recipientList string, url string, nodePath string) SuccessResponse {
+func (nsi *NodeServiceImpl) emailServerConfig(host string, port string, username string, password string, recipientList string, url string, nodePath string, programPath string) SuccessResponse {
 	var successResponse SuccessResponse
 
 	mailServerConfig.Host = host
@@ -1135,18 +1136,18 @@ func (nsi *NodeServiceImpl) emailServerConfig(host string, port string, username
 				//fmt.Println("Ticker stopped")
 				ticker.Stop()
 			}
-			nsi.healthCheck(url, nodePath)
+			nsi.healthCheck(url, nodePath, programPath)
 
 		}
 	}()
 	go func() {
-		nsi.sendTestMail(nodePath)
+		nsi.sendTestMail(nodePath, programPath)
 	}()
 	successResponse.Status = "success"
 	return successResponse
 }
 
-func (nsi *NodeServiceImpl) healthCheck(url string, nodePath string ) {
+func (nsi *NodeServiceImpl) healthCheck(url string, nodePath string, programPath string) {
 	ethClient := client.EthClient{url}
 	blockNumber := ethClient.BlockNumber()
 	if blockNumber == "" {
@@ -1157,7 +1158,7 @@ func (nsi *NodeServiceImpl) healthCheck(url string, nodePath string ) {
 				recipientList := util.MustGetString("RECIPIENTLIST", p)
 				recipients := strings.Split(recipientList, ",")
 
-				b, err := ioutil.ReadFile("/root/quorum-maker/NodeUnavailableTemplate.txt")
+				b, err := ioutil.ReadFile(programPath + "NodeUnavailableTemplate.txt")
 
 				if err != nil {
 					log.Println(err)
@@ -1174,7 +1175,7 @@ func (nsi *NodeServiceImpl) healthCheck(url string, nodePath string ) {
 	}
 }
 
-func (nsi *NodeServiceImpl) sendTestMail(nodePath string) {
+func (nsi *NodeServiceImpl) sendTestMail(nodePath string, programPath string) {
 	existsA := util.PropertyExists("RECIPIENTLIST", nodePath + "setup.conf")
 	existsB := util.PropertyExists("NODENAME", nodePath + "setup.conf")
 
@@ -1183,7 +1184,7 @@ func (nsi *NodeServiceImpl) sendTestMail(nodePath string) {
 		nodename := util.MustGetString("NODENAME", p)
 		recipientList := util.MustGetString("RECIPIENTLIST", p)
 		recipients := strings.Split(recipientList, ",")
-		b, err := ioutil.ReadFile("/root/quorum-maker/TestMailTemplate.txt")
+		b, err := ioutil.ReadFile(programPath + "TestMailTemplate.txt")
 		if err != nil {
 			log.Println(err)
 		}
@@ -1420,18 +1421,18 @@ func (nsi *NodeServiceImpl) GetChartData(url string) []ChartInfo {
 	return chartResponse
 }
 
-func (nsi *NodeServiceImpl) ContractCrawler(url string, nodePath string) {
+func (nsi *NodeServiceImpl) ContractCrawler(url string, nodePath string, programPath string) {
 	ticker := time.NewTicker(15 * time.Second)
 	go func() {
 		for range ticker.C {
 			if contractCrawlerMutex == 0 {
-				nsi.getContracts(url, nodePath)
+				nsi.getContracts(url, nodePath, programPath)
 			}
 		}
 	}()
 }
 
-func (nsi *NodeServiceImpl) getContracts(url string, nodePath string) {
+func (nsi *NodeServiceImpl) getContracts(url string, nodePath string, programPath string) {
 	contractCrawlerMutex = 1
 	ethClient := client.EthClient{url}
 	blockNumber := int(util.HexStringtoInt64(ethClient.BlockNumber()))
@@ -1457,7 +1458,7 @@ func (nsi *NodeServiceImpl) getContracts(url string, nodePath string) {
 					contTypeMap[txGetClient.ContractAddress] = "Public"
 					mode := currentMode(nodePath)
 					if mode == "ACTIVENI" {
-						nsi.attachModeRegisterDetails(url, nodePath, txGetClient.ContractAddress)
+						nsi.attachModeRegisterDetails(url, nodePath, programPath, txGetClient.ContractAddress)
 					}
 				}
 				contSenderMap[txGetClient.ContractAddress] = clientTransactions.From
@@ -1477,8 +1478,8 @@ func (nsi *NodeServiceImpl) getContracts(url string, nodePath string) {
 	contractCrawlerMutex = 0
 }
 
-func (nsi *NodeServiceImpl) attachModeRegisterDetails(url string, nodePath string, contractAdd string) {
-	nmcBytecode, err := ioutil.ReadFile("/root/quorum-maker/nmcBytecode")
+func (nsi *NodeServiceImpl) attachModeRegisterDetails(url string, nodePath string, programPath string, contractAdd string) {
+	nmcBytecode, err := ioutil.ReadFile(programPath + "nmcBytecode")
 	if err != nil {
 		log.Println(err)
 	}
@@ -1572,27 +1573,27 @@ func currentState(nodePath string) string {
 	return state
 }
 
-func (nsi *NodeServiceImpl) ABICrawler(url string) {
-	updateLastCheckedTime("0")
+func (nsi *NodeServiceImpl) ABICrawler(url string, programPath string) {
+	updateLastCheckedTime("0", programPath)
 	ticker := time.NewTicker(15 * time.Second)
 	go func() {
 		for range ticker.C {
 			if abiCrawlerMutex == 0 {
-				nsi.DirectoryCrawl()
+				nsi.DirectoryCrawl(programPath)
 			}
 		}
 	}()
 }
 
-func (nsi *NodeServiceImpl) DirectoryCrawl() {
+func (nsi *NodeServiceImpl) DirectoryCrawl(programPath string) {
 	abiCrawlerMutex = 1
-	ABIList := getFilesFromDirectory("/root/quorum-maker/contracts")
+	ABIList := getFilesFromDirectory(programPath + "contracts",programPath)
 	nsi.populateABIMap(ABIList)
 	abiCrawlerMutex = 0
-	updateLastCheckedTime(strconv.Itoa(int(time.Now().Unix())))
+	updateLastCheckedTime(strconv.Itoa(int(time.Now().Unix())), programPath)
 }
 
-func getFilesFromDirectory(searchDir string) []CrawledABI {
+func getFilesFromDirectory(searchDir string, programPath string) []CrawledABI {
 	fileList := []string{}
 	err := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
 		fileList = append(fileList, path)
@@ -1602,12 +1603,12 @@ func getFilesFromDirectory(searchDir string) []CrawledABI {
 		fmt.Println()
 	}
 	for _, file := range fileList {
-		crawledABIs = append(crawledABIs, getABIsFromDirectory(file)...)
+		crawledABIs = append(crawledABIs, getABIsFromDirectory(file, programPath)...)
 	}
 	return crawledABIs
 }
 
-func getABIsFromDirectory(searchDir string) []CrawledABI {
+func getABIsFromDirectory(searchDir string, programPath string) []CrawledABI {
 	r := regexp.MustCompile(`.json$`)
 	var crawledABIs []CrawledABI
 	files, _ := ioutil.ReadDir(searchDir)
@@ -1617,7 +1618,7 @@ func getABIsFromDirectory(searchDir string) []CrawledABI {
 			crawledABI.Filename = searchDir + "/" + file.Name()
 			crawledABI.Contractname = file.Name()
 			crawledABI.ModificationTime = file.ModTime().Unix()
-			if crawledABI.ModificationTime < getLastCheckedTime() {
+			if crawledABI.ModificationTime < getLastCheckedTime(programPath) {
 				continue
 			}
 			crawledABIs = append(crawledABIs, crawledABI)
@@ -1703,8 +1704,8 @@ func (nsi *NodeServiceImpl) writeContractDetailsToDisk(data string, bytecodeData
 	}
 }
 
-func getLastCheckedTime() int64 {
-	fileBytes, err := ioutil.ReadFile("/root/quorum-maker/contracts/.lastCheckedTime")
+func getLastCheckedTime(programPath string) int64 {
+	fileBytes, err := ioutil.ReadFile(programPath + "contracts/.lastCheckedTime")
 	if err != nil {
 		log.Println(err)
 	}
@@ -1714,10 +1715,10 @@ func getLastCheckedTime() int64 {
 	return int64(lastChecked)
 }
 
-func updateLastCheckedTime(timeVal string) {
-	util.DeleteFile("/root/quorum-maker/contracts/.lastCheckedTime")
-	util.CreateFile("/root/quorum-maker/contracts/.lastCheckedTime")
-	util.WriteFile("/root/quorum-maker/contracts/.lastCheckedTime", timeVal)
+func updateLastCheckedTime(timeVal string, programPath string) {
+	util.DeleteFile(programPath + "contracts/.lastCheckedTime")
+	util.CreateFile(programPath + "contracts/.lastCheckedTime")
+	util.WriteFile(programPath + "contracts/.lastCheckedTime", timeVal)
 }
 
 func (nsi *NodeServiceImpl) createAccount(password string, url string) SuccessResponse {
@@ -1777,12 +1778,12 @@ func (nsi *NodeServiceImpl) getNodeIPs(url string, nodePath string) []connectedI
 	return ipList
 }
 
-func (nsi *NodeServiceImpl) updateWhitelist(ipList []string) SuccessResponse {
+func (nsi *NodeServiceImpl) updateWhitelist(ipList []string, programPath string) SuccessResponse {
 	var update SuccessResponse
-	util.DeleteFile("/root/quorum-maker/contracts/.whiteList")
-	util.CreateFile("/root/quorum-maker/contracts/.whiteList")
+	util.DeleteFile(programPath + "contracts/.whiteList")
+	util.CreateFile(programPath + "contracts/.whiteList")
 	for _, ip := range ipList {
-		util.AppendStringToFile("/root/quorum-maker/contracts/.whiteList", fmt.Sprint(ip, "\n"))
+		util.AppendStringToFile(programPath + "contracts/.whiteList", fmt.Sprint(ip, "\n"))
 	}
 	update.Status = "IP Whitelist has been updated successfully"
 	return update

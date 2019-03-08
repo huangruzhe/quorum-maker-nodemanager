@@ -18,6 +18,8 @@ var nodeUrl = "http://localhost:22000"
 var listenPort = ":8000"
 //the node directory path
 var nodePath = "/home/"
+//the program directory path
+var programPath = "/root/quorum-maker/"
 
 func init() {
 	log.SetFormatter(&log.JSONFormatter{})
@@ -39,8 +41,12 @@ func main() {
 		nodePath = os.Args[3]
 	}
 
+	if len(os.Args) > 4 {
+		programPath = os.Args[4]
+	}
+
 	router := mux.NewRouter()
-	nodeService := service.NodeServiceImpl{nodeUrl, nodePath}
+	nodeService := service.NodeServiceImpl{nodeUrl, nodePath, programPath}
 
 	ticker := time.NewTicker(86400 * time.Second)
 	go func() {
@@ -56,8 +62,8 @@ func main() {
 		//log.Info("Deploying Network Manager Contract")
 		nodeService.NetworkManagerContractDeployer(nodeUrl, nodePath)
 		nodeService.RegisterNodeDetails(nodeUrl, nodePath)
-		nodeService.ContractCrawler(nodeUrl, nodePath)
-		nodeService.ABICrawler(nodeUrl)
+		nodeService.ContractCrawler(nodeUrl, nodePath, programPath)
+		nodeService.ABICrawler(nodeUrl, programPath)
 		nodeService.IPWhitelister()
 	}()
 
@@ -106,9 +112,9 @@ func main() {
 	router.HandleFunc("/updateWhitelist", nodeService.UpdateWhitelistHandler).Methods("POST")
 	router.HandleFunc("/updateWhitelist", nodeService.OptionsHandler).Methods("OPTIONS")
 
-	router.PathPrefix("/contracts").Handler(http.StripPrefix("/contracts", http.FileServer(http.Dir("/root/quorum-maker/contracts"))))
-	router.PathPrefix("/geth").Handler(http.StripPrefix("/geth", http.FileServer(http.Dir("/home/node/qdata/gethLogs"))))
-	router.PathPrefix("/constellation").Handler(http.StripPrefix("/constellation", http.FileServer(http.Dir("/home/node/qdata/constellationLogs"))))
+	router.PathPrefix("/contracts").Handler(http.StripPrefix("/contracts", http.FileServer(http.Dir(programPath + "contracts"))))
+	router.PathPrefix("/geth").Handler(http.StripPrefix("/geth", http.FileServer(http.Dir(nodePath + "node/qdata/gethLogs"))))
+	router.PathPrefix("/constellation").Handler(http.StripPrefix("/constellation", http.FileServer(http.Dir(nodePath + "node/qdata/constellationLogs"))))
 	router.PathPrefix("/").Handler(http.StripPrefix("/", NewFileServer("NodeManagerUI")))
 
 	log.Info(fmt.Sprintf("Node Manager listening on %s...", listenPort))
