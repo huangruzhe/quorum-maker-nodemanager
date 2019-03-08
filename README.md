@@ -16,7 +16,7 @@ Start:
 <pre><code> method1: simple run this "go run main.go  {nodeUrl} {listenPort} {nodePath} {programPath}"
  method2: Use IDE golang and edit configurations "Program arguments"</code></pre>
 
- expresion param
+ expression param
  <pre><code>nodeUrl: The node request http address
 listenPort: The program running port
 nodePath: The node directory path
