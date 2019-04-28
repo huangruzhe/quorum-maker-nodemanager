@@ -14,7 +14,9 @@ import (
 	"time"
 )
 
+//节点地址
 var nodeUrl = "http://localhost:22000"
+//当前服务端口
 var listenPort = ":8000"
 //the node directory path
 var nodePath = "/home/"
@@ -28,11 +30,11 @@ func init() {
 }
 
 func main() {
-
+	//获取命令参数
 	if len(os.Args) > 1 {
 		nodeUrl = os.Args[1]
 	}
-
+	//
 	if len(os.Args) > 2 {
 		listenPort = ":" + os.Args[2]
 	}

@@ -357,23 +357,28 @@ func (nsi *NodeServiceImpl) DeployContractHandler(w http.ResponseWriter, r *http
 	var Buf bytes.Buffer
 	var private bool
 	var publicKeys []string
-
+	//合约个数
 	count := r.FormValue("count")
+	//转成Int类型
 	countInt, err := strconv.Atoi(count)
 	if err != nil {
 		fmt.Println(err)
 	}
+	//文件名称
 	fileNames := make([]string, countInt)
+	//是否是私有交易
 	boolVal := r.FormValue("private")
+	//赋值private
 	if boolVal == "true" {
 		private = true
 	} else {
 		private = false
 	}
-
+	//privateFor
 	keys := r.FormValue("privateFor")
 	publicKeys = strings.Split(keys, ",")
 
+	//下面是典型的文件读写操作
 	for i := 0; i < countInt; i++ {
 		keyVal := "file" + strconv.Itoa(i+1)
 
@@ -381,24 +386,28 @@ func (nsi *NodeServiceImpl) DeployContractHandler(w http.ResponseWriter, r *http
 		if err != nil {
 			fmt.Println(err)
 		}
+		//关闭文件
 		defer file.Close()
+		//文件名称
 		name := strings.Split(header.Filename, ".")
-
+		//加上后缀
 		fileNames[i] = name[0] + ".sol"
-
+		//复制内容
 		io.Copy(&Buf, file)
 
 		contents := Buf.String()
-
+		//转成字节数组
 		fileContent := []byte(contents)
+		//写入文件中
 		err = ioutil.WriteFile("./"+name[0]+".sol", fileContent, 0775)
 		if err != nil {
 			fmt.Println(err)
 		}
-
+		//Buffer重置
 		Buf.Reset()
 	}
 
+	//部署合约到节点上
 	response := nsi.deployContract(publicKeys, fileNames, private, nsi.Url, nsi.NodePath)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(response)

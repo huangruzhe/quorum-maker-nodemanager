@@ -270,7 +270,7 @@ func (ec *EthClient) GetTransactionReceipt(txNo string) TransactionReceiptRespon
 }
 
 func (ec *EthClient) SendTransaction(param contracthandler.ContractParam, rh contracthandler.RequestHandler) string {
-
+	//交易步骤，先解锁账号，后进行交易
 	rpcClient := jsonrpc.NewClient(ec.Url)
 
 	response, err := rpcClient.Call("personal_unlockAccount", param.From, param.Passwd, nil)
@@ -312,20 +312,25 @@ func (ec *EthClient) EthCall(param contracthandler.ContractParam, encoder contra
 }
 
 func (ec *EthClient) DeployContracts(byteCode string, pubKeys []string, private bool) string {
+	//获取创世快地址
 	coinbase := ec.Coinbase()
 	var params contracthandler.ContractParam
+	//如果是私有交易
 	if private == true {
+		//合约参数比公有交易多了pubKeys
 		params = contracthandler.ContractParam{From: coinbase, Passwd: "", Parties: pubKeys}
 	} else {
 		params = contracthandler.ContractParam{From: coinbase, Passwd: ""}
 	}
-
+	//创建Handler对象
 	cont := contracthandler.DeployContractHandler{byteCode}
+	//发送交易
 	txHash := ec.SendTransaction(params, cont)
-
+	//等待一秒
 	time.Sleep(1 * time.Second)
-
+	//获取交易的合约地址
 	contractAdd := ec.GetTransactionReceipt(txHash).ContractAddress
+	//如果获取不到，重新获取一次
 	for contractAdd == "" {
 		time.Sleep(1 * time.Second)
 		contractAdd = ec.GetTransactionReceipt(txHash).ContractAddress

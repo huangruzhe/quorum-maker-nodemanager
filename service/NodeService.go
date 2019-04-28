@@ -750,43 +750,60 @@ func (nsi *NodeServiceImpl) joinRequestResponse(enode string, status string) Suc
 
 func (nsi *NodeServiceImpl) deployContract(pubKeys []string, fileName []string, private bool, url string, nodePath string) []ContractJson {
 	var nodeUrl = url
+	//创建以太客户端对象
 	ethClient := client.EthClient{nodeUrl}
+	//创世地址
 	fromAddress := ethClient.Coinbase()
 
 	//@TODO: Dont use absolute paths
 	var contractAdd string
+	//判断setup.conf中属性CONTRACT_ADD有没有值
 	exists := util.PropertyExists("CONTRACT_ADD", nodePath + "setup.conf")
 	if exists != "" {
+		//读取文件中的属性
 		p := properties.MustLoadFile(nodePath + "setup.conf", properties.UTF8)
+		//获取属性中的值
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
+	//创建合约客户端
 	nms := contractclient.NetworkMapContractClient{client.EthClient{url}, contracthandler.ContractParam{fromAddress, contractAdd, "", nil}, nodePath}
+	//判断是否为私有交易
 	if private == true && pubKeys[0] == "" {
+		//主节点ID
 		enode := ethClient.AdminNodeInfo().ID
+		//节点数
 		peerNo := len(nms.GetNodeDetailsList())
+		//publicKeys数组
 		publicKeys := make([]string, peerNo-1)
 		for i := 0; i < peerNo; i++ {
 			if enode != nms.GetNodeDetails(i).Enode {
+				//设置主节点的PublicKey
 				publicKeys[i-1] = nms.GetNodeDetails(i).PublicKey
 			}
 		}
 		//pubKeys = []string{"R1fOFUfzBbSVaXEYecrlo9rENW0dam0kmaA2pasGM14=", "Er5J8G+jXQA9O2eu7YdhkraYM+j+O5ArnMSZ24PpLQY="}
 		pubKeys = publicKeys
 	}
+	//编译合约使用solc
 	var solc string
 	if solc == "" { //@TODO huh ???
 		solc = "solc"
 	}
+	//文件数
 	fileNo := len(fileName)
+	//合约内容
 	var contractJsonArr []ContractJson
+	//执行合约编译
 	for i := 0; i < fileNo; i++ {
 		var binOut bytes.Buffer
 		var errorstring bytes.Buffer
+		//构建bin（ Binary of the contracts in hex.）
 		cmd := exec.Command(solc, "-o", ".", "--overwrite", "--bin", fileName[i])
 		cmd = exec.Command(solc, "--bin", fileName[i])
 		cmd.Stdout = &binOut
 		cmd.Stderr = &errorstring
 		err := cmd.Run()
+		//编译失败处理
 		contractJsonError := make([]ContractJson, 1)
 		if err != nil {
 			fmt.Println(fmt.Sprint(err) + ": " + errorstring.String())
@@ -794,6 +811,7 @@ func (nsi *NodeServiceImpl) deployContract(pubKeys []string, fileName []string, 
 			contractJsonError[0].Json = "Compilation Failed: JSON could not be created"
 			contractJsonError[0].Bytecode = "Compilation Failed: " + errorstring.String()
 		}
+		//构建abi（ABI specification of the contracts.）
 		var abiOut bytes.Buffer
 		cmd = exec.Command(solc, "-o", ".", "--overwrite", "--abi", fileName[i])
 		cmd = exec.Command(solc, "--abi", fileName[i])
@@ -807,21 +825,25 @@ func (nsi *NodeServiceImpl) deployContract(pubKeys []string, fileName []string, 
 			contractJsonArr = append(contractJsonArr, contractJsonError...)
 			continue
 		}
-
+		//字节码
 		bytecode := binOut.String()
 		var contractNames []string
 
 		reStart := regexp.MustCompile("Binary?")
 		reEnd := regexp.MustCompile("=======")
 		reContName := regexp.MustCompile(`.sol:(.+)?=======`)
-
+		//正则匹配，字节码
 		res := reContName.FindStringSubmatch(bytecode)
+		//合约名称
 		contractNames = append(contractNames, strings.Split(res[1], " ")[0])
+		//正则匹配一次，字节码
 		delimiterFirst := reEnd.FindStringIndex(bytecode)
 		bytecode = bytecode[delimiterFirst[1]:]
+		//正则匹配二次，字节码
 		delimiterSecond := reEnd.FindStringIndex(bytecode)
 		bytecode = bytecode[delimiterSecond[1]:]
 		contractBytecodesAll := reStart.FindAllStringIndex(bytecode, -1)
+		//bytecode的Binary正则匹配个数
 		contractJsonArrInternal := make([]ContractJson, len(contractBytecodesAll))
 
 		for j := 0; j < len(contractBytecodesAll); j++ {
@@ -835,18 +857,22 @@ func (nsi *NodeServiceImpl) deployContract(pubKeys []string, fileName []string, 
 			} else {
 				thisContractBytecode = bytecode[start:]
 			}
+			//字节码添加0X
 			thisContractBytecode = "0x" + thisContractBytecode
 			thisContractBytecode = strings.Replace(thisContractBytecode, " ", "", -1)
 			thisContractBytecode = strings.Replace(thisContractBytecode, "=", "", -1)
 			thisContractBytecode = strings.Replace(thisContractBytecode, "\n", "", -1)
 			contractJsonArrInternal[j].Bytecode = thisContractBytecode
 			reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+			//todo 最终的字节码，但不知道为什么要做上面这些处理
 			byteCodeSanitized := reg.ReplaceAllString(thisContractBytecode, "")
-
+			// 部署合约
 			contractAddress := ethClient.DeployContracts(byteCodeSanitized, pubKeys, private)
+			//将合约地址赋值到当前数组中
 			contractJsonArrInternal[j].ContractAddress = contractAddress
 
 			path := "./contracts"
+			//路径是否有问题
 			if _, err := os.Stat(path); os.IsNotExist(err) {
 				os.Mkdir(path, 0775)
 			}
@@ -860,14 +886,14 @@ func (nsi *NodeServiceImpl) deployContract(pubKeys []string, fileName []string, 
 				delimiterSecond := reEnd.FindStringIndex(bytecode)
 				bytecode = bytecode[delimiterSecond[1]:]
 			}
-
+			//文件路径是否有问题
 			path = "./contracts/" + contractAddress + "_" + contractNames[j]
 			if _, err := os.Stat(path); os.IsNotExist(err) {
 				os.Mkdir(path, 0775)
 			}
 			contractJsonArrInternal[j].Filename = contractNames[j]
 		}
-
+		//abi读取结果处理
 		abiString := abiOut.String()
 		reStartABI := regexp.MustCompile("ABI?")
 		delimiterFirst = reEnd.FindStringIndex(abiString)
@@ -1302,17 +1328,21 @@ func (nsi *NodeServiceImpl) RegisterNodeDetails(url string, nodePath string) {
 }
 
 func (nsi *NodeServiceImpl) NetworkManagerContractDeployer(url string,nodePath string) {
+	//获取当前节点模式
 	mode := currentMode(nodePath)
 	if mode == "PASSIVE" || mode == "ACTIVENI" {
 		return
 	}
+	//得到合约地址
 	var contractAdd string
 	exists := util.PropertyExists("CONTRACT_ADD", nodePath + "setup.conf")
 	if exists != "" {
 		p := properties.MustLoadFile(nodePath + "setup.conf", properties.UTF8)
 		contractAdd = util.MustGetString("CONTRACT_ADD", p)
 	}
+	//如果合约地址为空
 	if contractAdd == "" {
+		//部署合约
 		log.Info("Deploying Network Manager Contract")
 		filename := []string{"NetworkManagerContract.sol"}
 		deployedContract := nsi.deployContract(nil, filename, false, url, nodePath)
